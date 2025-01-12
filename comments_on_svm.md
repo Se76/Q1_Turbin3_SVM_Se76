@@ -1,5 +1,7 @@
 # SVM Pre Reqs
 
+# 1. 
+
 ### Disclaimer: I will be firstly very high level for a little moment to describe infrustructure in general, then I will come to something more specific. 
 
 I chose Runtime and SVM Api. In the part of runtime we are having bank, so bassically bank is state for the current slot on which voters/validators should vote later on, runtime(bank) will call SVM to execute transactions, smart contracts(programs) and their instructions. In the SVM in general will be made two steps of the transaction pipeline load accounts and execution.
@@ -55,6 +57,10 @@ The method returns a `LoadAndExecuteSanitizedTransactionsOutput` struct, which i
 ---
 
 # 2.Anotated code from Agave Validator
+
+> For this purpose I created a fork of Agave Validator and commented this part out, you can watch it [here](https://github.com/Se76/agave-fork-comments/blob/master/svm/src/transaction_processor.rs#L332)
+
+> And I took more than 30 lines because the function was longer and I thought that it would make more sense to work on the whole function
 
 ```rust
 /// Main entrypoint to the SVM.
@@ -277,3 +283,9 @@ The method returns a `LoadAndExecuteSanitizedTransactionsOutput` struct, which i
         }
     }
 ```
+
+## What is it doing?
+
+I have already desciribed everything in the code and [above]() 
+
+
