@@ -1,6 +1,4 @@
-# SVM Pre Reqs
-
-# 1. 
+# 1. Desciption of my focusing area
 
 ### Disclaimer: I will be firstly very high level for a little moment to describe infrustructure in general, then I will come to something more specific. 
 
@@ -286,6 +284,65 @@ The method returns a `LoadAndExecuteSanitizedTransactionsOutput` struct, which i
 
 ## What is it doing?
 
-I have already desciribed everything in the code and [above]() 
+I have already desciribed everything in the code and [above](https://github.com/Se76/Q1_Turbin3_SVM_Se76/blob/main/comments_on_svm.md#details-of-load_and_execute_sanitized_transactions) 
+
+## How can it be made better?
+
+### I would underline two points
+
+- Documentation
+  - more comments for the explination
+  - more exact information on internet
+  - complete educational video on SVM
+
+ - To add additional function that will make readability of code higher
+
+> Code before
+
+```rust
+...
+if program_cache_for_tx_batch.hit_max_limit {
+    return LoadAndExecuteSanitizedTransactionsOutput {
+        error_metrics,
+        execute_timings,
+        processing_results: (0..sanitized_txs.len())
+            .map(|_| Err(TransactionError::ProgramCacheHitMaxLimit))
+            .collect(),
+    };
+}
+...
+```
+
+> Code after
+
+```rust
+...
+if program_cache_for_tx_batch.hit_max_limit {
+    return Self::handle_program_cache_limit(sanitized_txs.len(), error_metrics, execute_timings);
+}
+...
+
+impl<FG: ForkGraph> TransactionBatchProcessor<FG> {
+   ...
+   fn handle_program_cache_limit(
+        tx_count: usize, 
+        error_metrics: TransactionErrorMetrics, 
+        execute_timings: ExecuteTimings
+    ) -> LoadAndExecuteSanitizedTransactionsOutput {
+        LoadAndExecuteSanitizedTransactionsOutput {
+            error_metrics,
+            execute_timings,
+            processing_results: (0..tx_count)
+                .map(|_| Err(TransactionError::ProgramCacheHitMaxLimit))
+                .collect(),
+        }
+    }
+   ...
+}
+```
+
+
+
+
 
 
