@@ -1,4 +1,4 @@
-# 1. Desciption of my focusing area
+# 1. Description of my focusing area
 
 ### Disclaimer: I will be firstly very high level for a little moment to describe infrustructure in general, then I will come to something more specific. 
 
