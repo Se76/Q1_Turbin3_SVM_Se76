@@ -1,3 +1,65 @@
+# 1. Description of my focusing area
+
+### Disclaimer: I will be firstly very high level for a little moment to describe infrustructure in general, then I will come to something more specific. 
+
+I chose Runtime and SVM Api. In the part of runtime we are having bank, so bassically bank is state for the current slot on which voters/validators should vote later on, runtime(bank) will call SVM to execute transactions, smart contracts(programs) and their instructions. In the SVM in general will be made two steps of the transaction pipeline load accounts and execution.
+
+## Specific part:
+
+The main method of the whole SVM Api is ```load_and_execute_sanitized_transactions()``` as the name says it loads needed program accounts, built-in programs also and all kinds of different accounts that are needed for execution and then depends on the result of loads execute txs which accounts are succesfully loaded and then writes changes to the current state.
+
+## Details of `load_and_execute_sanitized_transactions()`
+
+#### Parameters
+This method takes the following parameters:
+
+- **`callbacks`**: A reference to an implementation of `TransactionProcessingCallback`. This helps load accounts by ensuring they have the required attributes (e.g., owner, data, lamports, executable flag).
+- **`sanitized_txs`**: An array of transactions implementing the `SVMTransaction` trait. These transactions are processed in this batch.
+- **`check_results`**: A vector of `TransactionCheckResult`, containing pre-check results for the transactions.
+- **`environment`**: The runtime environment used to process the batch of transactions.
+- **`config`**: The configuration settings for transaction processing.
+
+The method returns a `LoadAndExecuteSanitizedTransactionsOutput` struct, which includes error metrics, execution timings, and the results of the processing.
+
+#### Execution Steps
+
+1. **Initialization**:
+   - Performs assertions to ensure that `sanitized_txs` and `check_results` are equal.
+   - Initializes default metrics (`TransactionErrorMetrics`), timings (`ExecuteTimings`), and processing results.
+
+2. **Loading Programs**:
+   - Filters executable program accounts using `filter_executable_program_accounts` and adds them to a hashmap.
+   - Loads missing program accounts into the program cache with `replenish_program_cache`. If the cache exceeds its limit, processing halts with an error.
+
+3. **Account Loader Creation**:
+   - Calculates the required capacity for accounts based on transaction account keys.
+   - Creates an `AccountLoader` to efficiently manage the loading of accounts.
+
+4. **Feature Flags**:
+   - Checks active features like `enable_transaction_loading_failure_fees` to determine specific processing rules.
+
+5. **Processing Transactions**:
+   - Iterates through each transaction in `sanitized_txs`:
+     - Validates conditions such as unique nonces and fees from the fee-payer.
+     - Loads necessary accounts and verifies them.
+     - Executes the transaction if all conditions are met, updating balances and account states.
+   - Tracks metrics for validation, loading, and execution times.
+
+6. **Final Results**:
+   - Logs detailed timings for all steps and updates the `ExecuteTimings` object.
+   - Returns a `LoadAndExecuteSanitizedTransactionsOutput` struct containing:
+     - **Error Metrics**: Data on errors encountered during processing.
+     - **Execution Timings**: Detailed timings for each phase.
+     - **Processing Results**: The outcomes for each transaction, including successes and specific errors.
+
+---
+
+# 2.Anotated code from Agave Validator
+
+> For this purpose I created a fork of Agave Validator and commented this part out, you can watch it [here](https://github.com/Se76/agave-fork-comments/blob/master/svm/src/transaction_processor.rs#L332)
+
+> And I took more than 30 lines because the function was longer and I thought that it would make more sense to work on the whole function
+
 ```rust
 /// Main entrypoint to the SVM.
     pub fn load_and_execute_sanitized_transactions<CB: TransactionProcessingCallback>( // literally main method, 
@@ -219,3 +281,68 @@
         }
     }
 ```
+
+## What is it doing?
+
+I have already desciribed everything in the code and [above](https://github.com/Se76/Q1_Turbin3_SVM_Se76/blob/main/comments_on_svm.md#details-of-load_and_execute_sanitized_transactions) 
+
+## How can it be made better?
+
+### I would underline two points
+
+- Documentation
+  - more comments for the explination
+  - more exact information on internet
+  - complete educational video on SVM
+
+ - To add additional function that will make readability of code higher
+
+> Code before
+
+```rust
+...
+if program_cache_for_tx_batch.hit_max_limit {
+    return LoadAndExecuteSanitizedTransactionsOutput {
+        error_metrics,
+        execute_timings,
+        processing_results: (0..sanitized_txs.len())
+            .map(|_| Err(TransactionError::ProgramCacheHitMaxLimit))
+            .collect(),
+    };
+}
+...
+```
+
+> Code after
+
+```rust
+...
+if program_cache_for_tx_batch.hit_max_limit {
+    return Self::handle_program_cache_limit(sanitized_txs.len(), error_metrics, execute_timings);
+}
+...
+
+impl<FG: ForkGraph> TransactionBatchProcessor<FG> {
+   ...
+   fn handle_program_cache_limit(
+        tx_count: usize, 
+        error_metrics: TransactionErrorMetrics, 
+        execute_timings: ExecuteTimings
+    ) -> LoadAndExecuteSanitizedTransactionsOutput {
+        LoadAndExecuteSanitizedTransactionsOutput {
+            error_metrics,
+            execute_timings,
+            processing_results: (0..tx_count)
+                .map(|_| Err(TransactionError::ProgramCacheHitMaxLimit))
+                .collect(),
+        }
+    }
+   ...
+}
+```
+
+
+
+
+
+
